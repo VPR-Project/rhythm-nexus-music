@@ -1,7 +1,8 @@
 
 import { useState } from 'react';
 import { Track } from '@/pages/Index';
-import { SkipBack, SkipForward, Volume } from 'lucide-react';
+import { SkipBack, SkipForward, Volume, Video, Music } from 'lucide-react';
+import { HLSPlayer } from './HLSPlayer';
 
 interface MusicPlayerProps {
   currentTrack: Track | null;
@@ -11,10 +12,20 @@ export const MusicPlayer = ({ currentTrack }: MusicPlayerProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(50);
   const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(180); // Mock duration
+  const [duration, setDuration] = useState(0);
+  const [isVideoMode, setIsVideoMode] = useState(false);
 
   const togglePlay = () => {
     setIsPlaying(!isPlaying);
+  };
+
+  const handleTimeUpdate = (time: number, dur: number) => {
+    setCurrentTime(time);
+    setDuration(dur);
+  };
+
+  const toggleVideoMode = () => {
+    setIsVideoMode(!isVideoMode);
   };
 
   if (!currentTrack) {
@@ -29,6 +40,32 @@ export const MusicPlayer = ({ currentTrack }: MusicPlayerProps) => {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-gray-900 to-gray-800 border-t border-gray-700 p-4">
+      {/* Video Player Area */}
+      {isVideoMode && (
+        <div className="mb-4 flex justify-center">
+          <HLSPlayer
+            currentTrack={currentTrack}
+            isPlaying={isPlaying}
+            onPlayPause={togglePlay}
+            onTimeUpdate={handleTimeUpdate}
+            volume={volume}
+            isVideoMode={isVideoMode}
+          />
+        </div>
+      )}
+
+      {/* Hidden HLS Player for audio mode */}
+      {!isVideoMode && (
+        <HLSPlayer
+          currentTrack={currentTrack}
+          isPlaying={isPlaying}
+          onPlayPause={togglePlay}
+          onTimeUpdate={handleTimeUpdate}
+          volume={volume}
+          isVideoMode={isVideoMode}
+        />
+      )}
+
       <div className="flex items-center justify-between max-w-7xl mx-auto">
         {/* Current Track Info */}
         <div className="flex items-center space-x-4 flex-1 min-w-0">
@@ -78,29 +115,42 @@ export const MusicPlayer = ({ currentTrack }: MusicPlayerProps) => {
           {/* Progress Bar */}
           <div className="flex items-center space-x-2 w-full">
             <span className="text-xs text-gray-400">
-              {Math.floor(currentTime / 60)}:{(currentTime % 60).toString().padStart(2, '0')}
+              {Math.floor(currentTime / 60)}:{Math.floor(currentTime % 60).toString().padStart(2, '0')}
             </span>
             <div className="flex-1 h-1 bg-gray-600 rounded-full overflow-hidden">
               <div 
                 className="h-full bg-green-500 transition-all duration-200"
-                style={{ width: `${(currentTime / duration) * 100}%` }}
+                style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
               ></div>
             </div>
             <span className="text-xs text-gray-400">
-              {Math.floor(duration / 60)}:{(duration % 60).toString().padStart(2, '0')}
+              {Math.floor(duration / 60)}:{Math.floor(duration % 60).toString().padStart(2, '0')}
             </span>
           </div>
         </div>
 
-        {/* Volume Control */}
-        <div className="flex items-center space-x-2 flex-1 justify-end">
-          <Volume className="h-4 w-4 text-gray-400" />
-          <div className="w-20 h-1 bg-gray-600 rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-green-500"
-              style={{ width: `${volume}%` }}
-            ></div>
+        {/* Volume Control and Video Toggle */}
+        <div className="flex items-center space-x-4 flex-1 justify-end">
+          <div className="flex items-center space-x-2">
+            <Volume className="h-4 w-4 text-gray-400" />
+            <div className="w-20 h-1 bg-gray-600 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-green-500"
+                style={{ width: `${volume}%` }}
+              ></div>
+            </div>
           </div>
+          
+          {/* Video/Audio Toggle Button */}
+          <button
+            onClick={toggleVideoMode}
+            className={`p-2 rounded-full transition-colors duration-200 ${
+              isVideoMode ? 'bg-green-500 text-white' : 'bg-gray-700 text-gray-400 hover:text-white'
+            }`}
+            title={isVideoMode ? 'Switch to audio mode' : 'Switch to video mode'}
+          >
+            {isVideoMode ? <Music className="h-4 w-4" /> : <Video className="h-4 w-4" />}
+          </button>
         </div>
       </div>
     </div>

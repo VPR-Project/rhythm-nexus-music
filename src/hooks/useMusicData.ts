@@ -1,9 +1,8 @@
-
 import { useState, useEffect } from 'react';
 import { Track } from '@/pages/Index';
 
 // CloudFront URL - Change this to your actual CloudFront URL
-const CLOUDFRONT_URL = 'https://your-cloudfront-url.cloudfront.net';
+const CLOUDFRONT_URL = 'http://dxdcg26c5b400.cloudfront.net/fractal/';
 
 export const useMusicData = () => {
   const [tracks, setTracks] = useState<Track[]>([]);
