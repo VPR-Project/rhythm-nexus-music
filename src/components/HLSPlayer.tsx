@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from 'react';
 import Hls from 'hls.js';
 import { Track } from '@/pages/Index';
@@ -30,14 +29,19 @@ export const HLSPlayer = ({
     if (!currentTrack || !currentRef.current) return;
 
     const mediaElement = currentRef.current;
-    const streamUrl = `http://dxdcg26c5b400.cloudfront.net/fractal/${currentTrack.id}/stream.m3u8`;
+    const streamUrl = `https://dxdcg26c5b400.cloudfront.net/fractal/${currentTrack.id}/stream.m3u8`;
+
+    console.log('Loading HLS stream:', streamUrl);
 
     if (Hls.isSupported()) {
       if (hlsRef.current) {
         hlsRef.current.destroy();
       }
 
-      const hls = new Hls();
+      const hls = new Hls({
+        debug: true,
+        enableWorker: true,
+      });
       hlsRef.current = hls;
       
       hls.loadSource(streamUrl);
@@ -49,10 +53,29 @@ export const HLSPlayer = ({
 
       hls.on(Hls.Events.ERROR, (event, data) => {
         console.error('HLS error:', data);
+        if (data.fatal) {
+          switch (data.type) {
+            case Hls.ErrorTypes.NETWORK_ERROR:
+              console.error('Fatal network error encountered, trying to recover...');
+              hls.startLoad();
+              break;
+            case Hls.ErrorTypes.MEDIA_ERROR:
+              console.error('Fatal media error encountered, trying to recover...');
+              hls.recoverMediaError();
+              break;
+            default:
+              console.error('Fatal error, destroying HLS instance');
+              hls.destroy();
+              break;
+          }
+        }
       });
     } else if (mediaElement.canPlayType('application/vnd.apple.mpegurl')) {
       // Safari native HLS support
+      console.log('Using native HLS support');
       mediaElement.src = streamUrl;
+    } else {
+      console.error('HLS is not supported in this browser');
     }
 
     const handleTimeUpdate = () => {
